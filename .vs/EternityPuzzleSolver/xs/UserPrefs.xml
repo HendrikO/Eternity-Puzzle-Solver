@@ -1,0 +1,20 @@
+﻿<Properties StartupConfiguration="{F83F1614-C455-4CEC-BB24-746998184457}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="EternityPuzzleSolver/Board.cs">
+    <Files>
+      <File FileName="EternityPuzzleSolver/Program.cs" Line="36" Column="1" />
+      <File FileName="EternityPuzzleSolver/Board.cs" Line="86" Column="35" />
+      <File FileName="EternityPuzzleSolver/Configuration.cs" Line="14" Column="41" />
+      <File FileName="EternityPuzzleSolver/PuzzlePiece.cs" Line="44" Column="61" />
+      <File FileName="EternityPuzzleSolver/Constants.cs" Line="8" Column="44" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="/Users/hendrikoosenbrug/Developer/EternityPuzzleSolver/EternityPuzzleSolver/Program.cs" relfile="EternityPuzzleSolver/Program.cs" line="36" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.ItemProperties.EternityPuzzleSolver PreferredExecutionTarget="MonoDevelop.Default" />
+  <MultiItemStartupConfigurations />
+</Properties>

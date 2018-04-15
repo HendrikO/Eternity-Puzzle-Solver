@@ -9,33 +9,33 @@ namespace EternityPuzzleSolver
     {
         static void Main(string[] args)
         {
+            // Initialize the board
             Initialize(out Board eternityBoard);
 
-            Configuration mostFit = new Configuration
-            {
-                Fitness = 100
-            };
+            // This variable will hold the most fit configuration
+            Configuration mostFit = new Configuration{ Fitness = 100};
 
             // Initialize the population
-            while (mostFit.Fitness > 6)
+            eternityBoard.BuildBoard(Constants.PopulationSize);
+
+            int counter = 0;
+            while (mostFit.Fitness != 0 && counter < 100000)
             {
-                eternityBoard.BuildBoard(20);
-                // Find most fit
+                eternityBoard.StartEvolution();
+                counter++;
                 int bestFitness = eternityBoard.Configurations.Min(x => x.Fitness);
                 if (mostFit.Fitness > bestFitness)
                 {
+                    counter = 0;
                     mostFit = eternityBoard.Configurations.First(x => x.Fitness == bestFitness);
                     Console.WriteLine("Best Fitness: {0}", mostFit.Fitness);
                 }
-                eternityBoard.ClearBoard();
             }
 
             // print output
             using (System.IO.StreamWriter outputFile =
                    new System.IO.StreamWriter("/Users/hendrikoosenbrug/Developer/EternityPuzzleSolver/PuzzleDraw-master/puzzle.csv"))
             { 
-                eternityBoard.BuildBoard();
-
                 foreach (var piece in mostFit.Pieces)
                 {
                     string outputLine = string.Empty;
@@ -43,6 +43,34 @@ namespace EternityPuzzleSolver
                     outputFile.WriteLine(outputLine);
                 }
             }
+
+            //// Initialize the population
+            //while (mostFit.Fitness > 6)
+            //{
+            //    eternityBoard.BuildBoard(20);
+            //    // Find most fit
+            //    int bestFitness = eternityBoard.Configurations.Min(x => x.Fitness);
+            //    if (mostFit.Fitness > bestFitness)
+            //    {
+            //        mostFit = eternityBoard.Configurations.First(x => x.Fitness == bestFitness);
+            //        Console.WriteLine("Best Fitness: {0}", mostFit.Fitness);
+            //    }
+            //    eternityBoard.ClearBoard();
+            //}
+
+            //// print output
+            //using (System.IO.StreamWriter outputFile =
+            //       new System.IO.StreamWriter("/Users/hendrikoosenbrug/Developer/EternityPuzzleSolver/PuzzleDraw-master/puzzle.csv"))
+            //{ 
+            //    eternityBoard.BuildBoard();
+
+            //    foreach (var piece in mostFit.Pieces)
+            //    {
+            //        string outputLine = string.Empty;
+            //        outputLine = string.Format("{0},{1},{2}", piece.Item1, piece.Item2, piece.Item3);
+            //        outputFile.WriteLine(outputLine);
+            //    }
+            //}
         }
 
         static void Initialize(out Board eternityBoard)

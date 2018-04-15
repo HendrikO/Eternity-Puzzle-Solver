@@ -40,8 +40,12 @@ namespace EternityPuzzleSolver
                 new Tuple<int, int, int>(thirdColor, firstColor, secondColor),
                 new Tuple<int, int, int>(secondColor, thirdColor, firstColor)
             };
+
+            this.CurrentArrangements = this.Arrangements[0];
         }
 
-        public List<Tuple<int, int, int>> Arrangements;
+        public List<Tuple<int, int, int>> Arrangements { get; set; }
+
+        public Tuple<int, int, int> CurrentArrangements { get; set; }
     }
 }
