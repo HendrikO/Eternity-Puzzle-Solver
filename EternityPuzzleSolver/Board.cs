@@ -45,8 +45,8 @@ namespace EternityPuzzleSolver
                 temp.RemoveAt(index);
 
                 // supply a configuration at random
-                int indexOrienation = rndOrientation.Next(3);
-                configuration.Pieces.Add(piece.Arrangements[indexOrienation]);
+
+                configuration.Pieces.Add(piece);
             }
 
             configuration.CalculateFitness();
@@ -71,20 +71,22 @@ namespace EternityPuzzleSolver
 
             // Order configurations by fitness
             List<Configuration> tempConfigs = new List<Configuration>(this.Configurations);
-            tempConfigs.AddRange(parents);
             tempConfigs.AddRange(children);
             tempConfigs = tempConfigs.OrderBy(x => x.Fitness).ToList();
 
-            // Only want to add the two most fit and randomize the rest
-            this.Configurations.Clear();
+            this.ClearBoard();
 
-            this.Configurations.Add(tempConfigs[0]);
-            this.Configurations.Add(tempConfigs[1]);
+            for (int i = 0; i < Constants.PopulationSize / 2; ++i)
+            {
+                this.Configurations.Add(tempConfigs[i]);
+            }
 
-            while (this.Configurations.Count != Constants.PopulationSize)
+            while (this.Configurations.Count < Constants.PopulationSize)
             {
                 this.BuildBoard();
             }
+
+
         }
 
         private void SelectParents(out List<Configuration> parents)
@@ -119,60 +121,108 @@ namespace EternityPuzzleSolver
             children = new List<Configuration>();
             Stack<Configuration> parentStack = new Stack<Configuration>(parents);
 
-            //*Recombination N-point Crossover*
-            // This is a modified version of n-point crossover that depends on the number of pieces
-
-            while (parentStack.Count != 0)
+            //*Order 1 Crossover*
+            while (parentStack.Count > 0)
             {
                 // Select two parents at random
                 var father = parentStack.Pop();
                 var mother = parentStack.Pop();
-                var firstChild = new Configuration();
-                var secondChild = new Configuration();
-                Random random = new Random();
 
-                // number of points = sqrt(number of pieces) - 1
-                int numberPointsRemaining = (int)Math.Sqrt(this.NumberPieces) - 1;
-
-                // Mark certain indexes as crossover points
-                int piecesMarked = 0; // Keeping track of how many pieces have been marked
-
-                // We toggle this variable to know if we shoudl take from father or mother
-                // It toggles after every segment
-                bool toggle = true;
-
-                while (piecesMarked != this.NumberPieces)
-                {
-                    int maxSegmentSize = this.NumberPieces - piecesMarked - numberPointsRemaining;
-                    int segmentSize = numberPointsRemaining == 0 ? maxSegmentSize : random.Next(1, maxSegmentSize);
-
-                    // add the segment to the children
-                    for (int i = 0; i < segmentSize; ++i)
-                    {
-                        if (toggle)
-                        {
-                            firstChild.Pieces.Add(father.Pieces[piecesMarked + i]);
-                            secondChild.Pieces.Add(mother.Pieces[piecesMarked + i]);
-                        }
-                        else
-                        {
-                            firstChild.Pieces.Add(mother.Pieces[piecesMarked + i]);
-                            secondChild.Pieces.Add(father.Pieces[piecesMarked + i]);
-                        }
-                    }
-
-                    piecesMarked = piecesMarked + segmentSize;
-                    numberPointsRemaining--;
-                    toggle = toggle ? false : true; // toggle the value
-                }
-
-                firstChild.CalculateFitness();
-                secondChild.CalculateFitness();
-                children.Add(firstChild);
-                children.Add(secondChild);
+                // Breed and generate 2 children
+                children.Add(this.GenerateChild(father, mother));
+                children.Add(this.GenerateChild(mother, father));
             }
 
+            // Mutate Children
+            this.MutateChildren(ref children);
+        }
 
+        private Configuration GenerateChild(Configuration father, Configuration mother)
+        {
+            Configuration child = new Configuration();
+
+            // swath size depends on the number of pieces that we have
+            int swathSize = (int)Math.Sqrt(this.NumberPieces);
+
+            // find a random index to start
+            Random random = new Random();
+            int index = random.Next(this.NumberPieces);
+
+            // Easier done with arrays
+            PuzzlePiece[] fatherArray = father.Pieces.ToArray();
+            PuzzlePiece[] motherArray = mother.Pieces.ToArray();
+            PuzzlePiece[] childArray = new PuzzlePiece[this.NumberPieces];
+
+            // Copy swath from father to first child
+            for (int i = 0; i < swathSize; ++i)
+            {
+                childArray[index] = fatherArray[index];
+
+                if (index == this.NumberPieces - 1)
+                {
+                    index = 0;
+                }
+                else
+                {
+                    index++;
+                }
+            }
+
+            // Copy the allelles from the mother now
+            int allelesRemaining = this.NumberPieces - swathSize;
+            int motherIndex = index;
+
+            while (allelesRemaining > 0)
+            {
+                // Check to see if the child doesn't already contains the allele in question
+                if (!childArray.Any(x => x!= null && x.ID == motherArray[motherIndex].ID))
+                {
+                    // We can add it
+                    childArray[index] = motherArray[motherIndex];
+                    index++;
+                    motherIndex++;
+                    allelesRemaining--;
+                }
+                else
+                {
+                    motherIndex++;
+                }
+
+                // Adjust index if it's too big
+                index = index == this.NumberPieces ? 0 : index;
+                motherIndex = motherIndex == this.NumberPieces ? 0 : motherIndex;
+            }
+
+            child.Pieces = childArray.ToList();
+            child.CalculateFitness();
+
+            return child;
+        }
+
+        private void MutateChildren(ref List<Configuration> children)
+        {
+            foreach (var child in children)
+            {
+                // pick the pieces for mutation
+                List<int> mutationPieceIndexes = new List<int>();
+                Random random = new Random();
+                while (mutationPieceIndexes.Count < 1)
+                {
+                    int index = random.Next(this.NumberPieces);
+                    if (!mutationPieceIndexes.Contains(index))
+                    {
+                        mutationPieceIndexes.Add(index);
+                    }
+                }
+
+                // Mutation pieces at those indexes by finding new configuration
+                foreach (var index in mutationPieceIndexes)
+                {
+                    child.Pieces[index].SwapArrangement();
+                }
+
+                child.CalculateFitness();
+            }
         }
     }
 }

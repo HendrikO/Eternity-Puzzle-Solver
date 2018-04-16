@@ -7,11 +7,11 @@ namespace EternityPuzzleSolver
     {
         public Configuration()
         {
-            this.Pieces = new List<Tuple<int, int, int>>();
+            this.Pieces = new List<PuzzlePiece>();
             this.Fitness = 0;
         }
 
-        public List<Tuple<int, int, int>> Pieces { get; set; }
+        public List<PuzzlePiece> Pieces { get; set; }
         public int Fitness { get; set; }
         public void CalculateFitness()
         {
@@ -38,7 +38,7 @@ namespace EternityPuzzleSolver
                         if (triangle == 0)
                         {
                             // Check if left edge is black
-                            if (this.Pieces[piecesListIndex].Item2 == 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item2 == 0)
                             {
                                 // Remove penalty
                                 this.Fitness--;
@@ -50,7 +50,7 @@ namespace EternityPuzzleSolver
                         if (triangle == numTriangles - 1)
                         {
                             // Check if right edge is black
-                            if (this.Pieces[piecesListIndex].Item3 == 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item3 == 0)
                             {
                                 // Remove penalty
                                 this.Fitness--;
@@ -61,7 +61,7 @@ namespace EternityPuzzleSolver
                         if (row == (int)numRows - 1)
                         {
                             // Remove penalties if bottom edge is black
-                            if (this.Pieces[piecesListIndex].Item1 == 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item1 == 0)
                             {
                                 // Remove penalty
                                 this.Fitness--;
@@ -72,8 +72,8 @@ namespace EternityPuzzleSolver
                         else
                         {
                             // need to compare to row below
-                            if (this.Pieces[piecesListIndex].Item1 == this.Pieces[piecesListIndex + numTriangles + 1].Item1
-                                && this.Pieces[piecesListIndex].Item1 != 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item1 == this.Pieces[piecesListIndex + numTriangles + 1].CurrentArrangement.Item1
+                                && this.Pieces[piecesListIndex].CurrentArrangement.Item1 != 0)
                             {
                                 this.Fitness--;
                                 this.Fitness--;
@@ -84,8 +84,8 @@ namespace EternityPuzzleSolver
                         if (triangle != numTriangles - 1)
                         {
                             // Remove penalty if both are the same
-                            if (this.Pieces[piecesListIndex].Item3 == this.Pieces[piecesListIndex + 1].Item3
-                                && this.Pieces[piecesListIndex].Item3 != 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item3 == this.Pieces[piecesListIndex + 1].CurrentArrangement.Item3
+                                && this.Pieces[piecesListIndex].CurrentArrangement.Item3 != 0)
                             {
                                 this.Fitness--;
                             }
@@ -94,8 +94,8 @@ namespace EternityPuzzleSolver
                         // Check triangle to the left
                         if (triangle != 0)
                         {
-                            if (this.Pieces[piecesListIndex].Item2 == this.Pieces[piecesListIndex - 1].Item2
-                               && this.Pieces[piecesListIndex].Item2 != 0)
+                            if (this.Pieces[piecesListIndex].CurrentArrangement.Item2 == this.Pieces[piecesListIndex - 1].CurrentArrangement.Item2
+                                && this.Pieces[piecesListIndex].CurrentArrangement.Item2 != 0)
                             {
                                 this.Fitness--;
                             }
@@ -107,15 +107,15 @@ namespace EternityPuzzleSolver
                     {
                         //*************Edge Dectection************
                         // Check triangle to the right
-                        if (this.Pieces[piecesListIndex].Item2 == this.Pieces[piecesListIndex + 1].Item2
-                            && this.Pieces[piecesListIndex].Item2 != 0)
+                        if (this.Pieces[piecesListIndex].CurrentArrangement.Item2 == this.Pieces[piecesListIndex + 1].CurrentArrangement.Item2
+                            && this.Pieces[piecesListIndex].CurrentArrangement.Item2 != 0)
                         {
                             this.Fitness--;
                         }
 
                         // Check triangle to the left
-                        if (this.Pieces[piecesListIndex].Item3 == this.Pieces[piecesListIndex - 1].Item3
-                            && this.Pieces[piecesListIndex].Item3 != 0)
+                        if (this.Pieces[piecesListIndex].CurrentArrangement.Item3 == this.Pieces[piecesListIndex - 1].CurrentArrangement.Item3
+                            && this.Pieces[piecesListIndex].CurrentArrangement.Item3 != 0)
                         {
                             this.Fitness--;
                         }

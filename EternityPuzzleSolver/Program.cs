@@ -39,7 +39,7 @@ namespace EternityPuzzleSolver
                 foreach (var piece in mostFit.Pieces)
                 {
                     string outputLine = string.Empty;
-                    outputLine = string.Format("{0},{1},{2}", piece.Item1, piece.Item2, piece.Item3);
+                    outputLine = string.Format("{0},{1},{2}", piece.CurrentArrangement.Item1, piece.CurrentArrangement.Item2, piece.CurrentArrangement.Item3);
                     outputFile.WriteLine(outputLine);
                 }
             }
@@ -109,7 +109,7 @@ namespace EternityPuzzleSolver
                     {
                         var puzzleInfo = line.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                         PuzzlePiece puzzlePiece =
-                            new PuzzlePiece(Int32.Parse(puzzleInfo[0]), Int32.Parse(puzzleInfo[1]), Int32.Parse(puzzleInfo[2]));
+                            new PuzzlePiece(Int32.Parse(puzzleInfo[0]), Int32.Parse(puzzleInfo[1]), Int32.Parse(puzzleInfo[2]), eternityBoard.PuzzlePieces.Count);
                         eternityBoard.PuzzlePieces.Add(puzzlePiece);
                     }
                 }

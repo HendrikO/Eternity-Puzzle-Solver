@@ -30,7 +30,7 @@ namespace EternityPuzzleSolver
 {
     public class PuzzlePiece
     {
-        public PuzzlePiece(int firstColor, int secondColor, int thirdColor)
+        public PuzzlePiece(int firstColor, int secondColor, int thirdColor, int id)
         {
             this.Arrangements = new List<Tuple<int, int, int>>
             {
@@ -41,11 +41,22 @@ namespace EternityPuzzleSolver
                 new Tuple<int, int, int>(secondColor, thirdColor, firstColor)
             };
 
-            this.CurrentArrangements = this.Arrangements[0];
+            Random random = new Random();
+            this.CurrentArrangement = this.Arrangements[random.Next(this.Arrangements.Count)];
+
+            this.ID = id;
         }
+
+        public int ID { get; set; }
 
         public List<Tuple<int, int, int>> Arrangements { get; set; }
 
-        public Tuple<int, int, int> CurrentArrangements { get; set; }
+        public Tuple<int, int, int> CurrentArrangement { get; set; }
+
+        public void SwapArrangement()
+        {
+            Random random = new Random();
+            this.CurrentArrangement = this.Arrangements[random.Next(this.Arrangements.Count)];
+        }
     }
 }
