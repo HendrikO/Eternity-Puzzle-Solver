@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace EternityPuzzleSolver
@@ -58,171 +59,256 @@ namespace EternityPuzzleSolver
             this.Configurations.Clear();
         }
 
-        public void StartEvolution()
+        public void StartMonteCarloTreeSearch(ref Configuration mostFit)
         {
-            // Select Parents
-            this.SelectParents(out List<Configuration> parents);
+            // First step: create the first tree node
+            // This node has no puzzle piece associated to it because it represents the empty state
+            TreeNode initialNode = new TreeNode();
+            initialNode.Root = initialNode;
+            TreeNode currentNode = initialNode;
 
-            // Generate Children (crossover and mutation)
-            this.GenerateChildren(parents, out List<Configuration> children);
+            // Next we need to add the available actions to the initial state
+            this.Expand(ref currentNode, ref initialNode, mostFit);
 
-            // Select Survivors
-            // TODO: Implement Diversity Function, for now elitism
+            int piecesLeft = this.NumberPieces - mostFit.Pieces.Count;
+            int runtime = 0;
 
-            // Order configurations by fitness
-            List<Configuration> tempConfigs = new List<Configuration>(this.Configurations);
-            tempConfigs.AddRange(children);
-            tempConfigs = tempConfigs.OrderBy(x => x.Fitness).ToList();
-
-            this.ClearBoard();
-
-            for (int i = 0; i < Constants.PopulationSize / 2; ++i)
+            if (piecesLeft > 39)
             {
-                this.Configurations.Add(tempConfigs[i]);
+                runtime = 25000;
+            }
+            else if (piecesLeft > 29)
+            {
+                runtime = 20000;
+            }
+            else if (piecesLeft > 19)
+            {
+                runtime = 15000;
+            }
+            else if (piecesLeft > 9)
+            {
+                runtime = 10000;
+            }
+            else
+            {
+                runtime = 5000;
             }
 
-            while (this.Configurations.Count < Constants.PopulationSize)
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            // Now we start the loop, ends either when we run out of time or no more moves to make
+            while (stopwatch.ElapsedMilliseconds < runtime) 
             {
-                this.BuildBoard();
-            }
-
-
-        }
-
-        private void SelectParents(out List<Configuration> parents)
-        {
-            parents = new List<Configuration>();
-
-            // First step is to shuffle the configurations
-            var shuffledConfigurations = this.Configurations.OrderBy(a => Guid.NewGuid()).ToList();
-
-            // Create a stack out of it
-            // Will pop from the stack to get competitors
-            Stack<Configuration> configurations = new Stack<Configuration>(shuffledConfigurations);
-
-            // Tournament Selection
-            while (parents.Count < Constants.NumberParents)
-            {
-                // Pop the competitors out of the stack
-                List<Configuration> competitors = new List<Configuration>
+                // Check if current node is a leaf node
+                if (currentNode.Children.Count == 0)
                 {
-                    configurations.Pop(),
-                    configurations.Pop(),
-                    configurations.Pop()
-                }.OrderBy(x => x.Fitness).ToList();
-
-                // Add the most fit of the competitors
-                parents.Add(competitors[0]);
-            }
-        }
-
-        private void GenerateChildren(List<Configuration> parents, out List<Configuration> children)
-        {
-            children = new List<Configuration>();
-            Stack<Configuration> parentStack = new Stack<Configuration>(parents);
-
-            //*Order 1 Crossover*
-            while (parentStack.Count > 0)
-            {
-                // Select two parents at random
-                var father = parentStack.Pop();
-                var mother = parentStack.Pop();
-
-                // Breed and generate 2 children
-                children.Add(this.GenerateChild(father, mother));
-                children.Add(this.GenerateChild(mother, father));
-            }
-
-            // Mutate Children
-            this.MutateChildren(ref children);
-        }
-
-        private Configuration GenerateChild(Configuration father, Configuration mother)
-        {
-            Configuration child = new Configuration();
-
-            // swath size depends on the number of pieces that we have
-            int swathSize = (int)Math.Sqrt(this.NumberPieces);
-
-            // find a random index to start
-            Random random = new Random();
-            int index = random.Next(this.NumberPieces);
-
-            // Easier done with arrays
-            PuzzlePiece[] fatherArray = father.Pieces.ToArray();
-            PuzzlePiece[] motherArray = mother.Pieces.ToArray();
-            PuzzlePiece[] childArray = new PuzzlePiece[this.NumberPieces];
-
-            // Copy swath from father to first child
-            for (int i = 0; i < swathSize; ++i)
-            {
-                childArray[index] = fatherArray[index];
-
-                if (index == this.NumberPieces - 1)
-                {
-                    index = 0;
-                }
-                else
-                {
-                    index++;
-                }
-            }
-
-            // Copy the allelles from the mother now
-            int allelesRemaining = this.NumberPieces - swathSize;
-            int motherIndex = index;
-
-            while (allelesRemaining > 0)
-            {
-                // Check to see if the child doesn't already contains the allele in question
-                if (!childArray.Any(x => x!= null && x.ID == motherArray[motherIndex].ID))
-                {
-                    // We can add it
-                    childArray[index] = motherArray[motherIndex];
-                    index++;
-                    motherIndex++;
-                    allelesRemaining--;
-                }
-                else
-                {
-                    motherIndex++;
-                }
-
-                // Adjust index if it's too big
-                index = index == this.NumberPieces ? 0 : index;
-                motherIndex = motherIndex == this.NumberPieces ? 0 : motherIndex;
-            }
-
-            child.Pieces = childArray.ToList();
-            child.CalculateFitness();
-
-            return child;
-        }
-
-        private void MutateChildren(ref List<Configuration> children)
-        {
-            foreach (var child in children)
-            {
-                // pick the pieces for mutation
-                List<int> mutationPieceIndexes = new List<int>();
-                Random random = new Random();
-                while (mutationPieceIndexes.Count < 1)
-                {
-                    int index = random.Next(this.NumberPieces);
-                    if (!mutationPieceIndexes.Contains(index))
+                    // Check if the number of passes is 0
+                    if (currentNode.NumberPlays == 0)
                     {
-                        mutationPieceIndexes.Add(index);
+                        // Rollout
+                        this.Rollout(ref currentNode, mostFit);
+
+                        // Go back to top
+                        currentNode = initialNode;
+                    }
+                    else
+                    {
+                        if (currentNode.Parent.Children.Count != 3)
+                        {
+                            this.Expand(ref currentNode, ref initialNode, mostFit);
+
+                            // Go to first child node
+                            currentNode = currentNode.Children[0];
+
+                            // Rollout
+                            this.Rollout(ref currentNode, mostFit);
+                        }
+
+                        // Go back to top
+                        currentNode = initialNode;
                     }
                 }
-
-                // Mutation pieces at those indexes by finding new configuration
-                foreach (var index in mutationPieceIndexes)
+                else
                 {
-                    child.Pieces[index].SwapArrangement();
-                }
+                    // Go to child node with highest UCB1
+                    currentNode.Children = currentNode.Children.OrderByDescending(x => x.UCB1).ToList();
 
-                child.CalculateFitness();
+                    // Check if there's an infinity score
+                    if (currentNode.Children.Exists(x => x.IsUCB1Infinity))
+                    {
+                        currentNode = currentNode.Children.Find(x => x.IsUCB1Infinity);
+                    }
+                    else
+                    {
+                        currentNode = currentNode.Children[0];
+                    }
+                }
             }
+
+            currentNode = initialNode;
+            currentNode.Children = currentNode.Children.OrderByDescending(x => x.UCB1).ToList();
+            mostFit.Pieces.Add(currentNode.Children[0].PuzzlePiece);
+        }
+
+        public void DeterminePlacedPieces(TreeNode currentNode, out List<int> ids)
+        {
+            ids = new List<int>();
+
+            while (currentNode.Parent != null)
+            {
+                ids.Add(currentNode.PuzzlePiece.ID);
+                currentNode = currentNode.Parent;
+            }
+        }
+
+        public void Expand(ref TreeNode currentNode, ref TreeNode rootNode, Configuration currentConfiguration)
+        {
+            // Expansion
+            // Add a child for each possible action from here
+            List<TreeNode> childNodes = new List<TreeNode>();
+
+            // Find the pieces that haven't been placed by going through the tree
+            this.DeterminePlacedPieces(currentNode, out List<int> ids);
+            foreach (var piece in currentConfiguration.Pieces)
+            {
+                ids.Add(piece.ID);
+            }
+            List<PuzzlePiece> placedPieces = new List<PuzzlePiece>();
+            foreach (var id in ids)
+            {
+                placedPieces.Add(this.PuzzlePieces.Find(x => x.ID == id));
+            }
+
+            List<PuzzlePiece> remainingPieces = this.PuzzlePieces.Except(placedPieces).ToList();
+
+            // Add a child node for every piece
+            foreach (var piece in remainingPieces)
+            {
+                // Add all three arrangements
+                // Get the arrangements
+                PuzzlePiece piece1 = piece.Duplicate();
+                piece1.CurrentArrangement = piece1.Arrangements[0];
+                PuzzlePiece piece2 = piece.Duplicate();
+                piece2.CurrentArrangement = piece2.Arrangements[1];
+                PuzzlePiece piece3 = piece.Duplicate();
+                piece3.CurrentArrangement = piece3.Arrangements[2];
+
+                // Create the children Nodes
+                TreeNode treeNode1 = new TreeNode
+                {
+                    PuzzlePiece = piece1,
+                    Root = rootNode,
+                    Parent = currentNode
+                };
+                TreeNode treeNode2 = new TreeNode
+                {
+                    PuzzlePiece = piece2,
+                    Root = rootNode,
+                    Parent = currentNode
+                };
+                TreeNode treeNode3 = new TreeNode
+                {
+                    PuzzlePiece = piece3,
+                    Root = rootNode,
+                    Parent = currentNode
+                };
+
+                // Add the nodes
+                childNodes.Add(treeNode1);
+                childNodes.Add(treeNode2);
+                childNodes.Add(treeNode3);
+            }
+
+            currentNode.Children = childNodes;
+        }
+
+        public void Rollout(ref TreeNode currentNode, Configuration currentConfiguration)
+        {
+            Configuration configuration = new Configuration();
+            TreeNode leafNode = currentNode;
+
+            // Create a configuration based on the pieces of the parents and the node's piece
+            while (currentNode.Parent != null)
+            {
+                configuration.Pieces.Add(currentNode.PuzzlePiece);
+                currentNode = currentNode.Parent;
+            }
+            configuration.Pieces.Reverse();
+
+            Configuration tempConfiguration = new Configuration();
+            foreach(var piece in currentConfiguration.Pieces)
+            {
+                tempConfiguration.Pieces.Add(piece.Duplicate());
+            }
+            tempConfiguration.Pieces.AddRange(configuration.Pieces);
+
+            currentNode = leafNode;
+
+            // Run the simulation of filling out the config and looking at average fitness
+            List<Configuration> simulatedConfigurations = new List<Configuration>();
+            for (int i = 0; i < 1000; ++i)
+            {
+                simulatedConfigurations.Add(this.FillOutConfiguration(tempConfiguration));
+            }
+
+            // Find out what is the average fitness of that move
+            double averageFitness = simulatedConfigurations.Average(x => x.Fitness);
+
+            // Back propagation
+            while (currentNode.Parent != null)
+            {
+                currentNode.TotalReward += averageFitness;
+                currentNode.NumberPlays++;
+                currentNode = currentNode.Parent;
+            }
+
+            // Do it for the root node as well
+            currentNode.TotalReward += averageFitness;
+            currentNode.NumberPlays++;
+
+            // Calculate the ucb1 score for everyone affected
+            currentNode = leafNode;
+            while (currentNode.Parent != null)
+            {
+                currentNode.CalculateUCB1();
+                currentNode = currentNode.Parent;
+            }
+            currentNode.CalculateUCB1();
+
+            // reset
+            currentNode = leafNode;
+        }
+
+        public Configuration FillOutConfiguration(Configuration configuration)
+        {
+            Configuration filledOut = new Configuration();
+            List<PuzzlePiece> copyPuzzlePieces = new List<PuzzlePiece>(this.PuzzlePieces);
+
+            // Copy over the existing pieces
+            foreach (var piece in configuration.Pieces)
+            {
+                filledOut.Pieces.Add(piece.Duplicate());
+            }
+
+            // Remove all pieces with the ID of a piece already in the configuration
+            foreach(var piece in configuration.Pieces)
+            {
+                copyPuzzlePieces.RemoveAll(x => x.ID == piece.ID);
+            }
+
+            // Fill out the configuration with the pieces that are left
+            while (filledOut.Pieces.Count < this.NumberPieces)
+            {
+                // Add a piece in random order
+                Random random = new Random();
+                int index = random.Next(copyPuzzlePieces.Count);
+                filledOut.Pieces.Add(copyPuzzlePieces[index]);
+
+                copyPuzzlePieces.RemoveAt(index);
+            }
+
+            filledOut.CalculateFitness();
+            return filledOut;
         }
     }
 }

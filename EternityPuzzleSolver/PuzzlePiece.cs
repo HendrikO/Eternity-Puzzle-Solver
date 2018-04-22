@@ -47,6 +47,20 @@ namespace EternityPuzzleSolver
             this.ID = id;
         }
 
+        public PuzzlePiece Duplicate()
+        {
+            PuzzlePiece duplicate = new PuzzlePiece
+                (this.Arrangements[0].Item1,
+                 this.Arrangements[0].Item2,
+                 this.Arrangements[0].Item3,
+                 this.ID)
+            {
+                CurrentArrangement = this.CurrentArrangement
+            };
+
+            return duplicate;
+        }
+
         public int ID { get; set; }
 
         public List<Tuple<int, int, int>> Arrangements { get; set; }
@@ -57,6 +71,13 @@ namespace EternityPuzzleSolver
         {
             Random random = new Random();
             this.CurrentArrangement = this.Arrangements[random.Next(this.Arrangements.Count)];
+        }
+
+        public bool IsBorderPiece()
+        {
+            return (this.CurrentArrangement.Item1 == 0 ||
+                    this.CurrentArrangement.Item2 == 0 ||
+                    this.CurrentArrangement.Item3 == 0);
         }
     }
 }

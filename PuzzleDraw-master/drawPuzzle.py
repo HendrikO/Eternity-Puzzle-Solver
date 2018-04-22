@@ -4,7 +4,7 @@ import csv
 
 ### input csv file and size of puzzle
 file = "/Users/hendrikoosenbrug/Developer/EternityPuzzleSolver/PuzzleDraw-master/puzzle.csv"
-size = 3
+size = 7
 
 colors = ["black","blue","brown","red","yellow","green","orange","beige","turquoise","pink"]
 
